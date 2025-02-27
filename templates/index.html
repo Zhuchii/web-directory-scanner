@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoBuster Web UI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1f1f1f;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        h2 {
+            color: #f39c12;
+            margin-bottom: 20px;
+        }
+        input, button, select {
+            margin: 10px;
+            padding: 12px;
+            border: 1px solid #f39c12;
+            border-radius: 5px;
+            background-color: #333;
+            color: #fff;
+            font-size: 16px;
+            width: 300px;
+        }
+        input:focus, select:focus, button:focus {
+            outline: none;
+            border-color: #e67e22;
+        }
+        button {
+            background-color: #f39c12;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #e67e22;
+        }
+        #custom-wordlist {
+            display: none;
+        }
+        #results {
+            margin-top: 20px;
+            text-align: center;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        table {
+            width: 100%;
+            max-width: 600px;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #2c3e50;
+        }
+        tr:nth-child(even) {
+            background-color: #444;
+        }
+        tr:hover {
+            background-color: #555;
+        }
+        .container {
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Web Endpoint scanner</h2>
+        <input type="text" id="target" placeholder="Target URL (e.g., http://example.com)">
+        
+        <select id="wordlist" onchange="toggleCustomWordlist()">
+            <option value="/usr/share/seclists/Discovery/Web-Content/common.txt">Common Wordlist</option>
+            <option value="/usr/share/seclists/Discovery/Web-Content/big.txt">Big Wordlist</option>
+            <option value="/usr/share/seclists/Discovery/Web-Content/raft-large-words.txt">Raft Large Words</option>
+            <option value="/usr/share/seclists/Discovery/Web-Content/directory-list-2.3-medium.txt">Directory List 2.3 Medium</option>
+            <option value="custom">Custom Wordlist</option>
+        </select>
+
+        <div id="custom-wordlist">
+            <input type="text" id="custom-path" placeholder="Enter custom wordlist path">
+        </div>
+        
+        <button onclick="runScan()">Start Scan</button>
+        <div id="results"></div>
+    </div>
+    
+    <script>
+        function toggleCustomWordlist() {
+            const wordlistSelect = document.getElementById('wordlist');
+            const customWordlistInput = document.getElementById('custom-wordlist');
+            if (wordlistSelect.value === 'custom') {
+                customWordlistInput.style.display = 'block';
+            } else {
+                customWordlistInput.style.display = 'none';
+            }
+        }
+
+        function runScan() {
+            const target = document.getElementById('target').value;
+            let wordlist = document.getElementById('wordlist').value;
+
+            if (wordlist === 'custom') {
+                wordlist = document.getElementById('custom-path').value;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = "Scanning...";
+
+            fetch('/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target, wordlist })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.results && data.results.length > 0) {
+                    const table = `
+                        <h3 style="color: #f39c12;">Scan Results</h3>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Path</th>
+                                    <th>Status</th>
+                                    <th>Redirection</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.results.map(r => {
+                                    const redirection = r.includes('[-->') ? r.split('[-->')[1].split(']')[0] : 'None';
+                                    return `
+                                        <tr>
+                                            <td>${r.split('(')[0].trim()}</td>
+                                            <td>${r.match(/\(Status: (\d+)\)/)[1]}</td>
+                                            <td>${redirection}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        <h4 style="color: #f39c12;">Time Taken: ${data.time_taken.toFixed(2)} seconds</h4>
+                    `;
+                    resultsDiv.innerHTML = table;
+                } else {
+                    resultsDiv.innerHTML = "<p>No results found.</p>";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultsDiv.innerHTML = "Error running GoBuster";
+            });
+        }
+    </script>
+</body>
+</html>
