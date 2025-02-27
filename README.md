@@ -10,7 +10,7 @@ pip install flask
 sudo apt install gobuster
 ```
 
-Then clone the repository and move it to /usr/share
+Then clone the secList repository and move it to /usr/share
 ```
 git clone https://github.com/danielmiessler/SecLists.git
 sudo mv SecLists /usr/share/seclists
