@@ -5,17 +5,21 @@ A simple web app that use gobuster and secList to scan URLs looking for hidden d
 
 ## How to use?
 Just install flask, gobuster
+
 `
 pip install flask
 sudo apt install gobuster
 `
 
 Luego clonar el repositorio de seclist y añadirlo a usr
+
 `
 git clone https://github.com/danielmiessler/SecLists.git
 sudo mv SecLists /usr/share/seclists
 `
+
 Por ultimo solo queda ejecutar la app
+
 `
 python3 app.py
 `
